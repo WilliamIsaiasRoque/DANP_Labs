@@ -35,7 +35,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppTareas(viewModel: TareasViewModel) {
-    val tareas by viewModel.todasLasTareas.collectAsState(initial = emptyList())
+    val tareas by viewModel.tareasFiltradas.collectAsState()
+    val filtroActual by viewModel.filtroActivo.collectAsState()
 
     var textoInput by remember { mutableStateOf("") }
     var tareaParaEdicion by remember { mutableStateOf<Tarea?>(null) }
@@ -59,6 +60,13 @@ fun AppTareas(viewModel: TareasViewModel) {
                 textoInput = ""
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        FilaDeFiltros(
+            filtroActual = filtroActual,
+            onFiltroSeleccionado = { viewModel.cambiarFiltro(it) }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -103,6 +111,45 @@ fun AppTareas(viewModel: TareasViewModel) {
         )
     }
 }
+
+@Composable
+fun FilaDeFiltros(filtroActual: TipoFiltro, onFiltroSeleccionado: (TipoFiltro) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        BotonFiltro(
+            texto = "Todas",
+            activo = filtroActual == TipoFiltro.NINGUNO,
+            onClick = { onFiltroSeleccionado(TipoFiltro.NINGUNO) }
+        )
+        BotonFiltro(
+            texto = "Pendientes",
+            activo = filtroActual == TipoFiltro.SOLO_PENDIENTES,
+            onClick = { onFiltroSeleccionado(TipoFiltro.SOLO_PENDIENTES) }
+        )
+        BotonFiltro(
+            texto = "Completadas",
+            activo = filtroActual == TipoFiltro.SOLO_COMPLETADAS,
+            onClick = { onFiltroSeleccionado(TipoFiltro.SOLO_COMPLETADAS) }
+        )
+    }
+}
+
+@Composable
+fun BotonFiltro(texto: String, activo: Boolean, onClick: () -> Unit) {
+    val colorBoton = if (activo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
+    val colorTexto = if (activo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = colorBoton, contentColor = colorTexto),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+    ) {
+        Text(texto)
+    }
+}
+
 
 @Composable
 fun TituloApp() {
