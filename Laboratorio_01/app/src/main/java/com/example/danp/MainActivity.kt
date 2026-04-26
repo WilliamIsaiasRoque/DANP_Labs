@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
@@ -26,15 +26,33 @@ class MainActivity : ComponentActivity() {
         val viewModel: TareasViewModel by viewModels { TareasViewModelFactory(db.tareaDao()) }
 
         setContent {
-            MaterialTheme {
-                AppTareas(viewModel)
+            val sistemaEnOscuro = isSystemInDarkTheme()
+            var modoOscuroActivo by remember { mutableStateOf(sistemaEnOscuro) }
+
+            val misColores = if (modoOscuroActivo) darkColorScheme() else lightColorScheme()
+
+            MaterialTheme(colorScheme = misColores) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AppTareas(
+                        viewModel = viewModel,
+                        esModoOscuro = modoOscuroActivo,
+                        onCambiarTema = { modoOscuroActivo = it }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun AppTareas(viewModel: TareasViewModel) {
+fun AppTareas(
+    viewModel: TareasViewModel,
+    esModoOscuro: Boolean,
+    onCambiarTema: (Boolean) -> Unit
+) {
     val tareas by viewModel.tareasFiltradas.collectAsState()
     val filtroActual by viewModel.filtroActivo.collectAsState()
 
@@ -43,7 +61,23 @@ fun AppTareas(viewModel: TareasViewModel) {
     var nuevoTextoEdicion by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        TituloApp()
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TituloApp()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Modo Oscuro", style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.width(8.dp))
+                Switch(
+                    checked = esModoOscuro,
+                    onCheckedChange = onCambiarTema
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         CampoTexto(
@@ -116,40 +150,30 @@ fun AppTareas(viewModel: TareasViewModel) {
 fun FilaDeFiltros(filtroActual: TipoFiltro, onFiltroSeleccionado: (TipoFiltro) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        BotonFiltro(
-            texto = "Todas",
-            activo = filtroActual == TipoFiltro.NINGUNO,
-            onClick = { onFiltroSeleccionado(TipoFiltro.NINGUNO) }
+        val filtros = listOf(
+            "Todas" to TipoFiltro.NINGUNO,
+            "Pendientes" to TipoFiltro.SOLO_PENDIENTES,
+            "Completadas" to TipoFiltro.SOLO_COMPLETADAS
         )
-        BotonFiltro(
-            texto = "Pendientes",
-            activo = filtroActual == TipoFiltro.SOLO_PENDIENTES,
-            onClick = { onFiltroSeleccionado(TipoFiltro.SOLO_PENDIENTES) }
-        )
-        BotonFiltro(
-            texto = "Completadas",
-            activo = filtroActual == TipoFiltro.SOLO_COMPLETADAS,
-            onClick = { onFiltroSeleccionado(TipoFiltro.SOLO_COMPLETADAS) }
-        )
+
+        filtros.forEach { (nombre, tipo) ->
+            val estaActivo = filtroActual == tipo
+            Button(
+                onClick = { onFiltroSeleccionado(tipo) },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (estaActivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (estaActivo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                contentPadding = PaddingValues(horizontal = 4.dp)
+            ) {
+                Text(nombre, style = MaterialTheme.typography.labelSmall)
+            }
+        }
     }
 }
-
-@Composable
-fun BotonFiltro(texto: String, activo: Boolean, onClick: () -> Unit) {
-    val colorBoton = if (activo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
-    val colorTexto = if (activo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
-
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = colorBoton, contentColor = colorTexto),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-    ) {
-        Text(texto)
-    }
-}
-
 
 @Composable
 fun TituloApp() {
@@ -209,7 +233,8 @@ fun ItemTarea(tarea: Tarea, onToggle: () -> Unit, onDelete: () -> Unit, onEdit: 
                 Text(
                     text = tarea.titulo,
                     modifier = Modifier.padding(start = 8.dp),
-                    color = if (tarea.completada) Color.Gray else Color.Black
+                    // El color cambia segun si esta completada o no
+                    color = if (tarea.completada) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
                 )
             }
             Row {
@@ -222,7 +247,13 @@ fun ItemTarea(tarea: Tarea, onToggle: () -> Unit, onDelete: () -> Unit, onEdit: 
 
 @Composable
 fun TarjetaBase(contenido: @Composable () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         contenido()
     }
 }
