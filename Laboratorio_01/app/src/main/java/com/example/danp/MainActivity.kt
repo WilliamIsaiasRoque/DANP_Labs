@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,15 @@ fun AppTareas() {
     var tareas by remember { mutableStateOf(listOf<Tarea>()) }
     var texto by remember { mutableStateOf("") }
     var contadorId by remember { mutableStateOf(0) }
+
+    var tareaParaEdicion by remember { mutableStateOf<Tarea?>(null) }
+    var nuevoTextoEdicion by remember { mutableStateOf("") }
+
+    fun EdicionTarea(tareaSeleccionada: Tarea, nuevoTitulo: String) {
+        tareas = tareas.map {
+            if (it.id == tareaSeleccionada.id) it.copy(titulo = nuevoTitulo) else it
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -75,6 +85,40 @@ fun AppTareas() {
             },
             onDelete = { tarea ->
                 tareas = tareas.filter { it.id != tarea.id }
+            },
+            onEdit = { tarea ->
+                tareaParaEdicion = tarea
+                nuevoTextoEdicion = tarea.titulo
+            }
+        )
+    }
+
+    tareaParaEdicion?.let { tareaInfo ->
+        AlertDialog(
+            onDismissRequest = { tareaParaEdicion = null },
+            title = { Text("Modificar Tarea") },
+            text = {
+                OutlinedTextField(
+                    value = nuevoTextoEdicion,
+                    onValueChange = { nuevoTextoEdicion = it },
+                    label = { Text("Nuevo nombre de la tarea") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    if (nuevoTextoEdicion.isNotBlank()) {
+                        EdicionTarea(tareaInfo, nuevoTextoEdicion)
+                        tareaParaEdicion = null
+                    }
+                }) {
+                    Text("Actualizar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { tareaParaEdicion = null }) {
+                    Text("Cancelar")
+                }
             }
         )
     }
@@ -122,14 +166,16 @@ fun CampoTexto(
 fun ListaTareas(
     tareas: List<Tarea>,
     onToggle: (Tarea) -> Unit,
-    onDelete: (Tarea) -> Unit
+    onDelete: (Tarea) -> Unit,
+    onEdit: (Tarea) -> Unit
 ) {
     LazyColumn {
         items(tareas) { tarea ->
             ItemTarea(
                 tarea = tarea,
                 onToggle = { onToggle(tarea) },
-                onDelete = { onDelete(tarea) }
+                onDelete = { onDelete(tarea) },
+                onEdit = { onEdit(tarea) }
             )
         }
     }
@@ -139,7 +185,8 @@ fun ListaTareas(
 fun ItemTarea(
     tarea: Tarea,
     onToggle: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     TarjetaBase {
         Row(
@@ -149,7 +196,10 @@ fun ItemTarea(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
                 Checkbox(
                     checked = tarea.completada,
                     onCheckedChange = { onToggle() }
@@ -160,8 +210,13 @@ fun ItemTarea(
                     color = if (tarea.completada) Color.Gray else Color.Black
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+            Row {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar")
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                }
             }
         }
     }
