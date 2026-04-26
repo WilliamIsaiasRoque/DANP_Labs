@@ -3,6 +3,7 @@ package com.example.danp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,60 +18,45 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-data class Tarea(
-    val id: Int,
-    val titulo: String,
-    val completada: Boolean = false
-)
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val db = TareaDatabase.getDatabase(applicationContext)
+        val viewModel: TareasViewModel by viewModels { TareasViewModelFactory(db.tareaDao()) }
+
         setContent {
             MaterialTheme {
-                AppTareas()
+                AppTareas(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun AppTareas() {
-    var tareas by remember { mutableStateOf(listOf<Tarea>()) }
-    var texto by remember { mutableStateOf("") }
-    var contadorId by remember { mutableStateOf(0) }
+fun AppTareas(viewModel: TareasViewModel) {
+    val tareas by viewModel.todasLasTareas.collectAsState(initial = emptyList())
 
+    var textoInput by remember { mutableStateOf("") }
     var tareaParaEdicion by remember { mutableStateOf<Tarea?>(null) }
     var nuevoTextoEdicion by remember { mutableStateOf("") }
 
-    fun EdicionTarea(tareaSeleccionada: Tarea, nuevoTitulo: String) {
-        tareas = tareas.map {
-            if (it.id == tareaSeleccionada.id) it.copy(titulo = nuevoTitulo) else it
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         TituloApp()
-
         Spacer(modifier = Modifier.height(16.dp))
 
         CampoTexto(
-            valor = texto,
-            onValorChange = { texto = it },
+            valor = textoInput,
+            onValorChange = { textoInput = it },
             label = "Nueva tarea"
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         BotonPrimario(texto = "Agregar tarea") {
-            if (texto.isNotBlank()) {
-                tareas = tareas + Tarea(contadorId, texto)
-                texto = ""
-                contadorId++
+            if (textoInput.isNotBlank()) {
+                viewModel.agregarTarea(textoInput)
+                textoInput = ""
             }
         }
 
@@ -78,14 +64,8 @@ fun AppTareas() {
 
         ListaTareas(
             tareas = tareas,
-            onToggle = { tarea ->
-                tareas = tareas.map {
-                    if (it.id == tarea.id) it.copy(completada = !it.completada) else it
-                }
-            },
-            onDelete = { tarea ->
-                tareas = tareas.filter { it.id != tarea.id }
-            },
+            onToggle = { viewModel.toggleTarea(it) },
+            onDelete = { viewModel.eliminarTarea(it) },
             onEdit = { tarea ->
                 tareaParaEdicion = tarea
                 nuevoTextoEdicion = tarea.titulo
@@ -101,14 +81,14 @@ fun AppTareas() {
                 OutlinedTextField(
                     value = nuevoTextoEdicion,
                     onValueChange = { nuevoTextoEdicion = it },
-                    label = { Text("Nuevo nombre de la tarea") },
+                    label = { Text("Nuevo nombre") },
                     singleLine = true
                 )
             },
             confirmButton = {
                 Button(onClick = {
                     if (nuevoTextoEdicion.isNotBlank()) {
-                        EdicionTarea(tareaInfo, nuevoTextoEdicion)
+                        viewModel.EdicionTarea(tareaInfo, nuevoTextoEdicion)
                         tareaParaEdicion = null
                     }
                 }) {
@@ -134,31 +114,19 @@ fun TituloApp() {
 }
 
 @Composable
-fun BotonPrimario(
-    texto: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth()
-    ) {
+fun BotonPrimario(texto: String, onClick: () -> Unit) {
+    Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Text(texto)
     }
 }
 
 @Composable
-fun CampoTexto(
-    valor: String,
-    onValorChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier
-) {
+fun CampoTexto(valor: String, onValorChange: (String) -> Unit, label: String) {
     OutlinedTextField(
         value = valor,
         onValueChange = onValorChange,
         label = { Text(label) },
-        modifier = modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     )
 }
 
@@ -182,28 +150,15 @@ fun ListaTareas(
 }
 
 @Composable
-fun ItemTarea(
-    tarea: Tarea,
-    onToggle: () -> Unit,
-    onDelete: () -> Unit,
-    onEdit: () -> Unit
-) {
+fun ItemTarea(tarea: Tarea, onToggle: () -> Unit, onDelete: () -> Unit, onEdit: () -> Unit) {
     TarjetaBase {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Checkbox(
-                    checked = tarea.completada,
-                    onCheckedChange = { onToggle() }
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Checkbox(checked = tarea.completada, onCheckedChange = { onToggle() })
                 Text(
                     text = tarea.titulo,
                     modifier = Modifier.padding(start = 8.dp),
@@ -211,35 +166,16 @@ fun ItemTarea(
                 )
             }
             Row {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar")
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar")
-                }
+                IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, contentDescription = "Editar") }
+                IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Eliminar") }
             }
         }
     }
 }
 
 @Composable
-fun TarjetaBase(
-    modifier: Modifier = Modifier,
-    contenido: @Composable () -> Unit
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
+fun TarjetaBase(contenido: @Composable () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         contenido()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewApp() {
-    MaterialTheme {
-        AppTareas()
     }
 }
