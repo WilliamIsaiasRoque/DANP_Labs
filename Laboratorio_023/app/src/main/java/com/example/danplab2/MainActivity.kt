@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,11 +34,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-// --- PERSISTENCIA SIMPLE (DATASTORE) ---
+// 1. DataStore para preferencias simples (Requerimiento 1)
 val Context.dataStore by preferencesDataStore(name = "settings")
 val USER_NAME_KEY = stringPreferencesKey("user_name")
 
-// --- RUTAS DE NAVEGACION ---
+// --- NAVEGACIÓN Y RUTAS (Requerimiento 6) ---
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Details : Screen("details/{habitId}") {
@@ -47,14 +46,14 @@ sealed class Screen(val route: String) {
     }
 }
 
-// --- PERSISTENCIA DE DATOS (ROOM) ---
+// --- PERSISTENCIA ROOM (Requerimiento 1 y 2) ---
 @Entity(tableName = "habits_table")
 data class Habit(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
     val isCompletedToday: Boolean = false,
     val streak: Int = 0,
-    val completedDates: List<String> = emptyList()
+    val completedDates: List<String> = emptyList() // Historial de dias
 )
 
 class Converters {
@@ -89,7 +88,7 @@ abstract class HabitDatabase : RoomDatabase() {
     }
 }
 
-// --- LOGICA DE NEGOCIO (VIEWMODEL) ---
+// --- VIEWMODEL: Lógica de Rachas y Filtros (Requerimiento 3 y 4) ---
 class HabitViewModel(private val dao: HabitDao, private val context: Context) : ViewModel() {
     private val _currentFilter = MutableStateFlow(HabitFilter.ALL)
     val currentFilter: StateFlow<HabitFilter> = _currentFilter
@@ -151,7 +150,7 @@ class HabitViewModelFactory(private val dao: HabitDao, private val context: Cont
     }
 }
 
-// --- ACTIVIDAD PRINCIPAL ---
+// --- ACTIVITY ---
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -163,6 +162,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = Screen.Home.route) {
                     composable(Screen.Home.route) { HabitListScreen(navController, viewModel) }
+                    // Requerimiento 7: Paso de parámetros
                     composable(Screen.Details.route) { backStackEntry ->
                         val id = backStackEntry.arguments?.getString("habitId")?.toIntOrNull()
                         HabitDetailScreen(id, navController, viewModel)
@@ -173,7 +173,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// --- PANTALLA: LISTA DE HABITOS ---
+// --- UI: PANTALLA PRINCIPAL ---
 @Composable
 fun HabitListScreen(navController: NavController, viewModel: HabitViewModel) {
     var inputHabit by remember { mutableStateOf("") }
@@ -187,11 +187,11 @@ fun HabitListScreen(navController: NavController, viewModel: HabitViewModel) {
         Text(text = "Hola, $name", style = MaterialTheme.typography.headlineMedium)
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TextField(value = inputName, onValueChange = { inputName = it }, placeholder = { Text("Cambiar nombre") }, modifier = Modifier.weight(1f))
-            Button(onClick = { viewModel.saveName(inputName); inputName = "" }, modifier = Modifier.padding(start = 8.dp)) { Text("Guardar") }
+            TextField(value = inputName, onValueChange = { inputName = it }, placeholder = { Text("Nombre") }, modifier = Modifier.weight(1f))
+            Button(onClick = { viewModel.saveName(inputName); inputName = "" }, modifier = Modifier.padding(start = 8.dp)) { Text("Save") }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HabitFilter.entries.forEach { f ->
                 FilterChip(selected = filter == f, onClick = { viewModel.setFilter(f) }, label = { Text(f.name) })
@@ -202,7 +202,7 @@ fun HabitListScreen(navController: NavController, viewModel: HabitViewModel) {
 
         Row {
             TextField(value = inputHabit, onValueChange = { inputHabit = it }, modifier = Modifier.weight(1f), placeholder = { Text("Nuevo hábito") })
-            Button(onClick = { if (inputHabit.isNotBlank()) { viewModel.addHabit(inputHabit); inputHabit = "" } }, modifier = Modifier.padding(start = 8.dp)) { Text("Añadir") }
+            Button(onClick = { if (inputHabit.isNotBlank()) { viewModel.addHabit(inputHabit); inputHabit = "" } }, modifier = Modifier.padding(start = 8.dp)) { Text("Ok") }
         }
 
         LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
@@ -215,7 +215,9 @@ fun HabitListScreen(navController: NavController, viewModel: HabitViewModel) {
 
 @Composable
 fun HabitItem(habit: Habit, onToggle: (Boolean) -> Unit, onDelete: () -> Unit, onDetailClick: () -> Unit) {
+    // Requerimiento 5: Cambio de color al marcar
     val color by animateColorAsState(if (habit.isCompletedToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant, label = "")
+
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onDetailClick() }, colors = CardDefaults.cardColors(containerColor = color)) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = habit.isCompletedToday, onCheckedChange = onToggle)
@@ -228,7 +230,7 @@ fun HabitItem(habit: Habit, onToggle: (Boolean) -> Unit, onDelete: () -> Unit, o
     }
 }
 
-// --- PANTALLA: DETALLES (Boton de Regreso) ---
+// --- UI: PANTALLA DETALLES (Requerimiento 10) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitDetailScreen(habitId: Int?, navController: NavController, viewModel: HabitViewModel) {
@@ -239,7 +241,7 @@ fun HabitDetailScreen(habitId: Int?, navController: NavController, viewModel: Ha
             TopAppBar(
                 title = { Text("Estadísticas") },
                 navigationIcon = {
-                    // IMPLEMENTACION DEL BOTON DE REGRESO (Paso 9)
+                    // Requerimiento 10: Botón de regreso (popBackStack)
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Regresar")
                     }
@@ -258,7 +260,7 @@ fun HabitDetailScreen(habitId: Int?, navController: NavController, viewModel: Ha
                         Text(text = "✓ Completado el $date", modifier = Modifier.padding(vertical = 4.dp))
                     }
                 }
-            } ?: Text("Cargando información...")
+            } ?: Text("Cargando...")
         }
     }
 }
