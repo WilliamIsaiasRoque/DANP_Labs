@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "danplab04"
+rootProject.name = "labdanp4"
 include(":app")
  

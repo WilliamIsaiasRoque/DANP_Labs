@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.danplab04"
+    namespace = "com.example.labdanp4"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.danplab04"
+        applicationId = "com.example.labdanp4"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
