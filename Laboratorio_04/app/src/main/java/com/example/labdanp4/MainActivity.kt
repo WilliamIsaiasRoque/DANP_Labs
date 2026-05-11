@@ -18,13 +18,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            OptimizedModifiersScreen()
+            FinalOptimizedScreen()
         }
     }
 }
 
 @Composable
-fun OptimizedModifiersScreen() {
+fun FinalOptimizedScreen() {
     val users = remember {
         mutableStateListOf<User>().apply {
             addAll(List(1000) { User(it, "User $it") })
