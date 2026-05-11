@@ -18,24 +18,30 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AntiPatternScreen()
+            // Llamamos a la nueva pantalla de la Fase 1
+            KeysImprovedScreen()
         }
     }
 }
 
 @Composable
-fun AntiPatternScreen() {
+fun KeysImprovedScreen() {
     var users by remember {
         mutableStateOf(List(1000) { User(it, "User $it") })
     }
+
     Column {
         Button(onClick = {
             users = users + User(users.size, "Nuevo Usuario")
         }) {
             Text("Agregar usuario")
         }
+
         LazyColumn {
-            items(users) { user ->
+            items(
+                items = users,
+                key = { it.id }
+            ) { user ->
                 Text(
                     text = user.name,
                     modifier = Modifier
