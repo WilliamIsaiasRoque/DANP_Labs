@@ -18,17 +18,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            SnapshotStateListScreen()
+            OptimizedModifiersScreen()
         }
     }
 }
 
 @Composable
-fun SnapshotStateListScreen() {
+fun OptimizedModifiersScreen() {
     val users = remember {
         mutableStateListOf<User>().apply {
             addAll(List(1000) { User(it, "User $it") })
         }
+    }
+
+    val itemModifier = remember {
+        Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
     }
 
     Column {
@@ -43,21 +49,20 @@ fun SnapshotStateListScreen() {
                 items = users,
                 key = { it.id }
             ) { user ->
-                UserItem(user)
+                UserItemOptimized(user, itemModifier)
             }
         }
     }
 }
 
 @Composable
-fun UserItem(user: User) {
+fun UserItemOptimized(user: User, modifier: Modifier) {
     var expanded by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { expanded = !expanded }
-            .padding(16.dp)
+        modifier = modifier.clickable {
+            expanded = !expanded
+        }
     ) {
         Text(user.name)
         if (expanded) {
