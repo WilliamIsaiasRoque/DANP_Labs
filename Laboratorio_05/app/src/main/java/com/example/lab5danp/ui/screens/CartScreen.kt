@@ -19,59 +19,38 @@ import com.example.lab5danp.ui.components.ProductCard
 fun CartScreen(
     navController: NavController,
     cartProducts: List<Product>,
-    favoriteProducts: List<Product>, // Añadido para el bug del corazón
+    favoriteProducts: List<Product>,
     onRemoveFromCart: (Product) -> Unit,
-    onToggleFavorite: (Product) -> Unit // Añadido para el bug del corazón
+    onToggleFavorite: (Product) -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Column(modifier = Modifier.fillMaxSize()) {
         AppToolbar(title = "Mi Carrito de Compras")
-
         Spacer(modifier = Modifier.height(8.dp))
 
         if (cartProducts.isEmpty()) {
-            Box(
-                modifier = Modifier.fillWeight(1f).fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(text = "El carrito está vacío.", style = MaterialTheme.typography.bodyLarge)
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f)
-            ) {
+            LazyColumn(modifier = Modifier.weight(1f)) {
                 items(cartProducts) { product ->
                     ProductCard(
                         product = product,
-                        isFavorite = favoriteProducts.contains(product), // Conectado al estado
+                        isFavorite = favoriteProducts.contains(product),
                         isInCart = true,
-                        onToggleFavorite = { onToggleFavorite(product) }, // Ejecuta la acción
+                        onToggleFavorite = { onToggleFavorite(product) },
                         onAddToCart = { onRemoveFromCart(product) },
-                        onViewDetail = { navController.navigate("detail/${it.name}/${it.price}") }
+                        onViewDetail = { navController.navigate("detail/${it.name}/${it.price}/${it.description}/${it.imageRes}") }
                     )
                 }
             }
 
             val total = cartProducts.sumOf { it.price }
-
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Total a Pagar: $$total",
-                    style = MaterialTheme.typography.headlineMedium
-                )
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "Total a Pagar: $$total", style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(12.dp))
-                AppButton(
-                    text = "Finalizar Compra",
-                    onClick = { }
-                )
+                AppButton(text = "Finalizar Compra", onClick = { })
             }
         }
     }
 }
-
-@Composable
-fun Modifier.fillWeight(weight: Float): Modifier = this.then(Modifier.fillMaxHeight())

@@ -21,15 +21,10 @@ fun FavoritesScreen(
 ) {
     Column {
         AppToolbar(title = "Mis Favoritos")
-
         Spacer(modifier = Modifier.height(8.dp))
 
         if (favoriteProducts.isEmpty()) {
-            Text(
-                text = "No tienes favoritos aún.",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(16.dp)
-            )
+            Text(text = "No tienes favoritos aún.", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(16.dp))
         } else {
             LazyColumn {
                 items(favoriteProducts) { product ->
@@ -37,7 +32,7 @@ fun FavoritesScreen(
                         product = product,
                         isFavorite = true,
                         onToggleFavorite = { onToggleFavorite(product) },
-                        onViewDetail = { navController.navigate("detail/${it.name}/${it.price}") }
+                        onViewDetail = { navController.navigate("detail/${it.name}/${it.price}/${it.description}/${it.imageRes}") }
                     )
                 }
             }

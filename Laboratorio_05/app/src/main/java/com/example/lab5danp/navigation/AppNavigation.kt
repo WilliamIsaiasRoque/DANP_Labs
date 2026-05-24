@@ -53,19 +53,29 @@ fun AppNavigation(
             CartScreen(
                 navController = navController,
                 cartProducts = cartProducts,
-                favoriteProducts = favoriteProducts, // Se inyecta la memoria de favoritos
+                favoriteProducts = favoriteProducts,
                 onRemoveFromCart = { cartProducts.remove(it) },
-                onToggleFavorite = { product -> // Se inyecta la lógica de favoritos
+                onToggleFavorite = { product ->
                     if (favoriteProducts.contains(product)) favoriteProducts.remove(product)
                     else favoriteProducts.add(product)
                 }
             )
         }
 
-        composable("detail/{name}/{price}") { backStackEntry ->
+        // ruta final
+        composable("detail/{name}/{price}/{description}/{imageRes}") { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name") ?: ""
             val price = backStackEntry.arguments?.getString("price") ?: ""
-            DetailScreen(name = name, price = price)
+            val description = backStackEntry.arguments?.getString("description") ?: ""
+            val imageRes = backStackEntry.arguments?.getString("imageRes")?.toIntOrNull() ?: 0
+
+            DetailScreen(
+                navController = navController,
+                name = name,
+                price = price,
+                description = description,
+                imageRes = imageRes // Mandamos el entero de la imagen
+            )
         }
     }
 }

@@ -58,7 +58,7 @@ fun ProductCard(
                         )
                     }
 
-                    // BOTÓN DEL CARRITO AÑADIDO
+                    // btn de carrito
                     IconButton(onClick = onAddToCart) {
                         Icon(
                             imageVector = Icons.Filled.ShoppingCart,

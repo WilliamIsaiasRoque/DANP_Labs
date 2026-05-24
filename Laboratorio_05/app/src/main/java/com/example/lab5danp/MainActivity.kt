@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
                     currentTheme = when (it) {
                         "GREEN" -> AppThemeMode.GREEN
                         "PURPLE" -> AppThemeMode.PURPLE
-                        "ORANGE" -> AppThemeMode.ORANGE // Nueva condición agregada
+                        "ORANGE" -> AppThemeMode.ORANGE // Nueva condicion agregada
                         else -> AppThemeMode.BLUE
                     }
                 }

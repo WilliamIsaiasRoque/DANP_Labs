@@ -18,7 +18,7 @@ fun ThemeSelector(
         AppButton(text = "Blue", onClick = { onThemeSelected(AppThemeMode.BLUE) })
         AppButton(text = "Green", onClick = { onThemeSelected(AppThemeMode.GREEN) })
         AppButton(text = "Purple", onClick = { onThemeSelected(AppThemeMode.PURPLE) })
-        // Nuevo botón agregado a la UI
+        // Nuevo btn agregado a la ui
         AppButton(text = "Orange", onClick = { onThemeSelected(AppThemeMode.ORANGE) })
     }
 }
