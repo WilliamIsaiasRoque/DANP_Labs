@@ -5,7 +5,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 enum class AppThemeMode {
-    BLUE, GREEN, PURPLE
+    BLUE, GREEN, PURPLE, ORANGE // <-- Agregado ORANGE
 }
 
 @Composable
@@ -17,10 +17,17 @@ fun ModularStoreTheme(
         AppThemeMode.BLUE -> lightColorScheme(primary = BluePrimary)
         AppThemeMode.GREEN -> lightColorScheme(primary = GreenPrimary)
         AppThemeMode.PURPLE -> lightColorScheme(primary = PurplePrimary)
+        // Cuarto tema con fondos modificados
+        AppThemeMode.ORANGE -> lightColorScheme(
+            primary = OrangePrimary,
+            background = OrangeBackground,
+            surface = OrangeBackground
+        )
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = Typography, // <-- Agregado para la nueva fuente
         content = content
     )
 }

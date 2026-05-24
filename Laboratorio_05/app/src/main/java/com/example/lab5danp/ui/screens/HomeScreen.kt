@@ -3,6 +3,8 @@ package com.example.lab5danp.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -10,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.lab5danp.model.Product
 import com.example.lab5danp.ui.components.AppToolbar
+import com.example.lab5danp.ui.components.CategoryCard
 import com.example.lab5danp.ui.components.ProductCard
 import com.example.lab5danp.ui.components.ThemeSelector
 
@@ -29,9 +32,42 @@ fun HomeScreen(
     Column {
         AppToolbar(title = "Modular Store")
         Spacer(modifier = Modifier.height(12.dp))
+
         ThemeSelector {
             onThemeChange(it.name)
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Categorías",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            CategoryCard(
+                categoryName = "Computadoras",
+                modifier = Modifier.weight(1f),
+                onClick = { }
+            )
+            CategoryCard(
+                categoryName = "Periféricos",
+                modifier = Modifier.weight(1f),
+                onClick = { }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Productos Destacados",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
 
         LazyColumn {
             items(products) { product ->
