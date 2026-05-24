@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.lab5danp.model.Product
+import com.example.lab5danp.ui.components.AppButton
 import com.example.lab5danp.ui.components.AppToolbar
 import com.example.lab5danp.ui.components.CategoryCard
 import com.example.lab5danp.ui.components.ProductCard
@@ -19,6 +20,10 @@ import com.example.lab5danp.ui.components.ThemeSelector
 @Composable
 fun HomeScreen(
     navController: NavController,
+    favoriteProducts: List<Product>,
+    cartProducts: List<Product>, // Añadido
+    onToggleFavorite: (Product) -> Unit,
+    onToggleCart: (Product) -> Unit, // Añadido
     onThemeChange: (String) -> Unit
 ) {
     val products = remember {
@@ -33,9 +38,7 @@ fun HomeScreen(
         AppToolbar(title = "Modular Store")
         Spacer(modifier = Modifier.height(12.dp))
 
-        ThemeSelector {
-            onThemeChange(it.name)
-        }
+        ThemeSelector { onThemeChange(it.name) }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -45,37 +48,40 @@ fun HomeScreen(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
+            modifier = Modifier.fillMaxWidth().padding(8.dp)
         ) {
-            CategoryCard(
-                categoryName = "Computadoras",
-                modifier = Modifier.weight(1f),
-                onClick = { }
+            CategoryCard(categoryName = "Computadoras", modifier = Modifier.weight(1f), onClick = { })
+            CategoryCard(categoryName = "Periféricos", modifier = Modifier.weight(1f), onClick = { })
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // FILA DE ACCESOS CON CONTADORES DINÁMICOS
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            AppButton(
+                text = "Favs (${favoriteProducts.size})",
+                onClick = { navController.navigate("favorites") }
             )
-            CategoryCard(
-                categoryName = "Periféricos",
-                modifier = Modifier.weight(1f),
-                onClick = { }
+            AppButton(
+                text = "Carrito (${cartProducts.size})",
+                onClick = { navController.navigate("cart") }
             )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = "Productos Destacados",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-
         LazyColumn {
             items(products) { product ->
                 ProductCard(
                     product = product,
-                    onViewDetail = {
-                        navController.navigate("detail/${it.name}/${it.price}")
-                    }
+                    isFavorite = favoriteProducts.contains(product),
+                    isInCart = cartProducts.contains(product),
+                    onToggleFavorite = { onToggleFavorite(product) },
+                    onAddToCart = { onToggleCart(product) },
+                    onViewDetail = { navController.navigate("detail/${it.name}/${it.price}") }
                 )
             }
         }
